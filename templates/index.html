@@ -1,0 +1,1047 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Klaviyo Template Pusher</title>
+  <meta name="description" content="A premium utility to directly push HTML email templates into the Klaviyo templates manager.">
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <style>
+    :root {
+      --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+      --card-bg: rgba(30, 41, 59, 0.7);
+      --card-border: rgba(255, 255, 255, 0.08);
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --primary: #38bdf8;
+      --primary-hover: #0ea5e9;
+      --accent: #818cf8;
+      --success: #10b981;
+      --error: #ef4444;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background: var(--bg-gradient);
+      color: var(--text-main);
+      font-family: 'Inter', -apple-system, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      overflow-x: hidden;
+    }
+
+    /* Container holding the glass card */
+    .container {
+      width: 100%;
+      max-width: 1150px;
+      position: relative;
+      display: grid;
+      grid-template-columns: 1.2fr 1fr;
+      gap: 30px;
+      align-items: start;
+    }
+
+    @media (max-width: 900px) {
+      .container {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* Beautiful glow backdrop effect */
+    .container::before {
+      content: '';
+      position: absolute;
+      width: 250px;
+      height: 250px;
+      background: radial-gradient(circle, rgba(56, 189, 248, 0.15) 0%, rgba(129, 140, 248, 0) 70%);
+      top: -60px;
+      left: -60px;
+      z-index: -1;
+    }
+    .container::after {
+      content: '';
+      position: absolute;
+      width: 250px;
+      height: 250px;
+      background: radial-gradient(circle, rgba(129, 140, 248, 0.15) 0%, rgba(56, 189, 248, 0) 70%);
+      bottom: -60px;
+      right: -60px;
+      z-index: -1;
+    }
+
+    /* Glassmorphic card styling */
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-radius: 24px;
+      padding: 40px;
+      box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.5);
+    }
+
+    /* Header styling */
+    header {
+      margin-bottom: 30px;
+      text-align: center;
+    }
+
+    h1 {
+      font-size: 28px;
+      font-weight: 800;
+      letter-spacing: -0.025em;
+      margin-bottom: 8px;
+      background: linear-gradient(to right, #38bdf8, #818cf8);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .subtitle {
+      font-size: 14px;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+
+    /* API Connection Badge */
+    .api-status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px solid var(--card-border);
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      margin-bottom: 24px;
+    }
+
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+
+    .dot.success {
+      background-color: var(--success);
+      box-shadow: 0 0 8px var(--success);
+    }
+
+    .dot.error {
+      background-color: var(--error);
+      box-shadow: 0 0 8px var(--error);
+    }
+
+    /* Form Fields */
+    .form-group {
+      margin-bottom: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    label {
+      font-size: 13px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+    }
+
+    .input-field {
+      width: 100%;
+      background: rgba(15, 23, 42, 0.4);
+      border: 1px solid var(--card-border);
+      border-radius: 10px;
+      padding: 12px 16px;
+      color: var(--text-main);
+      font-family: inherit;
+      font-size: 15px;
+      transition: all 0.2s ease;
+    }
+
+    .input-field:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.15);
+    }
+
+    /* Drag and Drop Zone */
+    .dropzone {
+      border: 2px dashed rgba(255, 255, 255, 0.15);
+      border-radius: 12px;
+      padding: 30px 20px;
+      text-align: center;
+      cursor: pointer;
+      background: rgba(15, 23, 42, 0.2);
+      transition: all 0.2s ease;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .dropzone:hover, .dropzone.dragover {
+      border-color: var(--primary);
+      background: rgba(56, 189, 248, 0.04);
+    }
+
+    .dropzone-icon {
+      font-size: 32px;
+      color: var(--primary);
+    }
+
+    .dropzone-text {
+      font-size: 14px;
+      color: var(--text-main);
+      font-weight: 500;
+    }
+
+    .dropzone-subtext {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .file-badge {
+      display: none;
+      background: rgba(56, 189, 248, 0.1);
+      border: 1px solid rgba(56, 189, 248, 0.2);
+      color: var(--primary);
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 500;
+      word-break: break-all;
+    }
+
+    /* Hidden Native Input */
+    #html_file {
+      display: none;
+    }
+
+    /* Button styling */
+    .btn {
+      width: 100%;
+      background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+      border: none;
+      border-radius: 12px;
+      padding: 14px 20px;
+      color: #0f172a;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 10px;
+      transition: all 0.25s ease;
+      box-shadow: 0 4px 12px rgba(56, 189, 248, 0.2);
+    }
+
+    .btn:hover:not(:disabled) {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 16px rgba(56, 189, 248, 0.35);
+      filter: brightness(1.05);
+    }
+
+    .btn:active:not(:disabled) {
+      transform: translateY(1px);
+    }
+
+    .btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    /* Spinner */
+    .spinner {
+      width: 20px;
+      height: 20px;
+      border: 3px solid rgba(15, 23, 42, 0.2);
+      border-top-color: #0f172a;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      display: none;
+    }
+
+    /* Result Panel styling */
+    .result-panel {
+      margin-top: 30px;
+      border-radius: 12px;
+      padding: 20px;
+      display: none;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    .result-panel.success {
+      background: rgba(16, 185, 129, 0.08);
+      border: 1px solid rgba(16, 185, 129, 0.2);
+      color: #a7f3d0;
+    }
+
+    .result-panel.error {
+      background: rgba(239, 68, 68, 0.08);
+      border: 1px solid rgba(239, 68, 68, 0.2);
+      color: #fca5a5;
+    }
+
+    .result-header {
+      font-weight: 700;
+      font-size: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+
+    .result-details {
+      background: rgba(15, 23, 42, 0.3);
+      border-radius: 8px;
+      padding: 12px;
+      font-family: monospace;
+      font-size: 12px;
+      margin-top: 10px;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+
+    .klaviyo-link {
+      display: inline-block;
+      margin-top: 14px;
+      color: var(--primary);
+      text-decoration: none;
+      font-weight: 600;
+      border-bottom: 1px dashed var(--primary);
+      transition: all 0.2s ease;
+    }
+
+    .klaviyo-link:hover {
+      color: var(--text-main);
+      border-color: var(--text-main);
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* Responsive scaling */
+    @media (max-width: 640px) {
+      .card, .template-list-card {
+        padding: 30px 20px;
+      }
+    }
+
+    /* Templates List Container */
+    .template-list-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-radius: 24px;
+      padding: 40px;
+      box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.5);
+      align-self: stretch;
+      display: flex;
+      flex-direction: column;
+      max-height: 720px;
+    }
+
+    .list-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      gap: 10px;
+    }
+
+    .list-header h2 {
+      font-size: 20px;
+      font-weight: 700;
+      background: linear-gradient(to right, #38bdf8, #818cf8);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .refresh-btn {
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px solid var(--card-border);
+      color: var(--text-main);
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s ease;
+    }
+
+    .refresh-btn:hover {
+      background: rgba(56, 189, 248, 0.1);
+      border-color: var(--primary);
+    }
+
+    /* Template Items List styling */
+    .templates-scroll-area {
+      overflow-y: auto;
+      flex: 1;
+      padding-right: 5px;
+      margin-top: 15px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    /* Custom scrollbar for templates list */
+    .templates-scroll-area::-webkit-scrollbar {
+      width: 6px;
+    }
+    .templates-scroll-area::-webkit-scrollbar-track {
+      background: rgba(15, 23, 42, 0.2);
+      border-radius: 3px;
+    }
+    .templates-scroll-area::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 3px;
+    }
+    .templates-scroll-area::-webkit-scrollbar-thumb:hover {
+      background: rgba(255, 255, 255, 0.2);
+    }
+
+    .template-item {
+      background: rgba(15, 23, 42, 0.3);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 16px;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .template-item:hover {
+      background: rgba(56, 189, 248, 0.05);
+      border-color: rgba(56, 189, 248, 0.3);
+      transform: translateY(-2px);
+    }
+
+    .template-item.selected {
+      background: rgba(56, 189, 248, 0.12);
+      border-color: var(--primary);
+      box-shadow: 0 0 12px rgba(56, 189, 248, 0.2);
+    }
+
+    .template-info-block {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      flex: 1;
+      min-width: 0;
+    }
+
+    .template-item-name {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-main);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .template-item-meta {
+      font-size: 11px;
+      color: var(--text-muted);
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .badge-code {
+      background: rgba(56, 189, 248, 0.15);
+      color: var(--primary);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-weight: 700;
+      text-transform: uppercase;
+      font-size: 9px;
+    }
+
+    .badge-other {
+      background: rgba(148, 163, 184, 0.15);
+      color: var(--text-muted);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-weight: 700;
+      text-transform: uppercase;
+      font-size: 9px;
+    }
+
+    .template-item-id {
+      font-family: monospace;
+      background: rgba(15, 23, 42, 0.5);
+      padding: 1px 4px;
+      border-radius: 4px;
+    }
+
+    .template-item-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .action-btn-select {
+      background: var(--primary);
+      color: #0f172a;
+      border: none;
+      border-radius: 6px;
+      padding: 6px 12px;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .action-btn-select:hover {
+      filter: brightness(1.1);
+    }
+
+    .action-btn-download {
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 12px;
+      transition: all 0.15s ease;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 24px;
+      height: 24px;
+      border-radius: 6px;
+      border: 1px solid var(--card-border);
+      background: rgba(15, 23, 42, 0.2);
+      cursor: pointer;
+    }
+
+    .action-btn-download:hover {
+      color: var(--primary);
+      border-color: rgba(56, 189, 248, 0.3);
+      background: rgba(56, 189, 248, 0.05);
+    }
+
+    .action-btn-link {
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 13px;
+      transition: color 0.15s ease;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 24px;
+      height: 24px;
+      border-radius: 6px;
+      border: 1px solid var(--card-border);
+      background: rgba(15, 23, 42, 0.2);
+    }
+
+    .action-btn-link:hover {
+      color: var(--primary);
+      border-color: rgba(56, 189, 248, 0.3);
+    }
+
+    /* Selection Highlight Notification */
+    .selection-notice {
+      background: rgba(56, 189, 248, 0.1);
+      border: 1px solid rgba(56, 189, 248, 0.2);
+      border-radius: 10px;
+      padding: 10px 14px;
+      font-size: 13px;
+      color: #bae6fd;
+      margin-bottom: 20px;
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+      animation: fadeIn 0.3s ease;
+    }
+
+    .selection-notice-text {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      flex: 1;
+    }
+
+    .clear-selection-btn {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 600;
+      margin-left: 10px;
+    }
+
+    .clear-selection-btn:hover {
+      color: var(--error);
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-5px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <!-- Left Column: Push Form -->
+    <div class="card">
+      <header>
+        <h1>Klaviyo Template Pusher</h1>
+        <p class="subtitle">Directly import HTML email template configurations into Klaviyo</p>
+      </header>
+
+      <!-- Connection Status Banner -->
+      <center>
+        <div class="api-status-badge">
+          {% if key_exists %}
+            <span class="dot success"></span>
+            <span style="color: var(--text-main);">Klaviyo API Key Loaded ({{ masked_key }})</span>
+          {% else %}
+            <span class="dot error"></span>
+            <span style="color: var(--text-muted);">Klaviyo API Key Not Found</span>
+          {% endif %}
+        </div>
+      </center>
+
+      <form id="pusher-form">
+        <!-- Template Name -->
+        <div class="form-group">
+          <label for="name">Template Name</label>
+          <input type="text" id="name" name="name" class="input-field" placeholder="e.g. Summer Special Offer" required>
+        </div>
+
+        <!-- Template ID (optional) -->
+        <div class="form-group">
+          <label for="template_id">Template ID <span style="font-size: 11px; text-transform: none; font-weight: normal; color: var(--text-muted);">(optional update)</span></label>
+          <input type="text" id="template_id" name="template_id" class="input-field" placeholder="e.g. T12345 (to overwrite existing)">
+        </div>
+
+        <!-- HTML File Uploader -->
+        <div class="form-group">
+          <label>HTML File</label>
+          <div class="dropzone" id="dropzone">
+            <span class="dropzone-icon">📄</span>
+            <span class="dropzone-text" id="dropzone-prompt">Drag & Drop HTML email file or click to browse</span>
+            <span class="dropzone-subtext" id="dropzone-sub">Supports .html and .htm files</span>
+            <div class="file-badge" id="file-badge"></div>
+          </div>
+          <input type="file" id="html_file" name="html_file" accept=".html,.htm">
+        </div>
+
+        <!-- Selection Notice Banner -->
+        <div class="selection-notice" id="selection-notice">
+          <span class="selection-notice-text" id="selection-notice-text">Selected template loaded.</span>
+          <button type="button" class="clear-selection-btn" id="clear-selection-btn">Clear Selection</button>
+        </div>
+
+        <!-- Submit Action -->
+        <button type="submit" class="btn" id="submit-btn" {% if not key_exists %}disabled{% endif %}>
+          <span class="spinner" id="spinner"></span>
+          <span id="btn-text">Push to Klaviyo</span>
+        </button>
+      </form>
+
+      <!-- Response Panel -->
+      <div id="result-panel" class="result-panel">
+        <div id="result-header" class="result-header"></div>
+        <div id="result-message"></div>
+        <div id="result-meta"></div>
+      </div>
+    </div>
+
+    <!-- Right Column: Existing templates list -->
+    {% if key_exists %}
+    <div class="template-list-card">
+      <div class="list-header">
+        <h2>Templates on Klaviyo</h2>
+        <button id="refresh-list-btn" class="refresh-btn" type="button">
+          <span class="refresh-spinner" id="list-spinner" style="display: none; width: 14px; height: 14px; border: 2px solid rgba(255,255,255,0.2); border-top-color: var(--text-main); border-radius: 50%; animation: spin 0.8s linear infinite; margin-right: 6px;"></span>
+          <span id="refresh-btn-text">Refresh</span>
+        </button>
+      </div>
+
+      <div class="search-wrapper">
+        <input type="text" id="search-input" class="input-field" placeholder="Search templates by name or ID...">
+      </div>
+
+      <div id="templates-list-status" style="text-align: center; color: var(--text-muted); font-size: 13px; margin-top: 30px; padding: 20px;">
+        Loading templates...
+      </div>
+
+      <div class="templates-scroll-area" id="templates-scroll-area" style="display: none;">
+        <!-- Templates will be rendered here dynamically -->
+      </div>
+    </div>
+    {% else %}
+    <div class="template-list-card" style="justify-content: center; align-items: center; text-align: center; opacity: 0.6; min-height: 300px;">
+      <span style="font-size: 40px; margin-bottom: 15px;">🔒</span>
+      <h2>Server Templates Locked</h2>
+      <p class="subtitle" style="margin-top: 10px;">Please configure a valid Klaviyo API Key in your environment to view templates.</p>
+    </div>
+    {% endif %}
+  </div>
+
+  <script>
+    const dropzone = document.getElementById('dropzone');
+    const fileInput = document.getElementById('html_file');
+    const fileBadge = document.getElementById('file-badge');
+    const dropzonePrompt = document.getElementById('dropzone-prompt');
+    const dropzoneSub = document.getElementById('dropzone-sub');
+    const form = document.getElementById('pusher-form');
+    const submitBtn = document.getElementById('submit-btn');
+    const btnText = document.getElementById('btn-text');
+    const spinner = document.getElementById('spinner');
+    const resultPanel = document.getElementById('result-panel');
+    const resultHeader = document.getElementById('result-header');
+    const resultMessage = document.getElementById('result-message');
+    const resultMeta = document.getElementById('result-meta');
+
+    // Template list elements (only if key_exists is true)
+    const refreshListBtn = document.getElementById('refresh-list-btn');
+    const refreshBtnText = document.getElementById('refresh-btn-text');
+    const listSpinner = document.getElementById('list-spinner');
+    const searchInput = document.getElementById('search-input');
+    const templatesListStatus = document.getElementById('templates-list-status');
+    const templatesScrollArea = document.getElementById('templates-scroll-area');
+    const selectionNotice = document.getElementById('selection-notice');
+    const selectionNoticeText = document.getElementById('selection-notice-text');
+    const clearSelectionBtn = document.getElementById('clear-selection-btn');
+    const templateNameInput = document.getElementById('name');
+    const templateIdInput = document.getElementById('template_id');
+
+    let allTemplates = [];
+
+    // Fetch templates from Klaviyo
+    async function fetchTemplates() {
+      if (!refreshListBtn) return;
+      try {
+        listSpinner.style.display = 'inline-block';
+        refreshBtnText.innerText = 'Refreshing...';
+        templatesListStatus.style.display = 'block';
+        templatesListStatus.innerText = 'Fetching templates from Klaviyo...';
+        templatesScrollArea.style.display = 'none';
+
+        const response = await fetch('/templates');
+        const data = await response.json();
+
+        if (response.ok && data.success) {
+          allTemplates = data.templates;
+          renderTemplates(allTemplates);
+        } else {
+          templatesListStatus.innerText = `Error: ${data.message || 'Could not load templates.'}`;
+        }
+      } catch (err) {
+        templatesListStatus.innerText = 'Connection error. Could not connect to local server.';
+      } finally {
+        listSpinner.style.display = 'none';
+        refreshBtnText.innerText = 'Refresh';
+      }
+    }
+
+    // Format updated timestamp
+    function formatDate(isoString) {
+      if (!isoString) return 'Never';
+      try {
+        const date = new Date(isoString);
+        return date.toLocaleDateString(undefined, {
+          month: 'short',
+          day: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+        });
+      } catch (e) {
+        return isoString;
+      }
+    }
+
+    // Render templates into HTML list
+    function renderTemplates(templates) {
+      if (!templatesScrollArea) return;
+      templatesScrollArea.innerHTML = '';
+
+      if (templates.length === 0) {
+        templatesListStatus.style.display = 'block';
+        templatesListStatus.innerText = 'No templates found.';
+        templatesScrollArea.style.display = 'none';
+        return;
+      }
+
+      templatesListStatus.style.display = 'none';
+      templatesScrollArea.style.display = 'flex';
+
+      templates.forEach(template => {
+        const item = document.createElement('div');
+        item.className = 'template-item';
+        item.dataset.id = template.id;
+
+        if (templateIdInput.value === template.id) {
+          item.classList.add('selected');
+        }
+
+        const isCode = template.editor_type === 'CODE';
+        const badgeClass = isCode ? 'badge-code' : 'badge-other';
+
+        item.innerHTML = `
+          <div class="template-info-block">
+            <div class="template-item-name" title="${template.name}">${template.name}</div>
+            <div class="template-item-meta">
+              <span class="${badgeClass}">${template.editor_type}</span>
+              <span>ID: <span class="template-item-id">${template.id}</span></span>
+              <span>Updated: ${formatDate(template.updated)}</span>
+            </div>
+          </div>
+          <div class="template-item-actions">
+            <button type="button" class="action-btn-select">Update</button>
+            <button type="button" class="action-btn-download" title="Download HTML">📥</button>
+            <a href="https://www.klaviyo.com/templates" target="_blank" class="action-btn-link" title="Open in Klaviyo">🔗</a>
+          </div>
+        `;
+
+        const selectAction = () => {
+          templateIdInput.value = template.id;
+          templateNameInput.value = template.name;
+
+          document.querySelectorAll('.template-item').forEach(el => el.classList.remove('selected'));
+          item.classList.add('selected');
+
+          selectionNoticeText.innerHTML = `<strong>Selected:</strong> ${template.name} (ID: ${template.id})`;
+          selectionNotice.style.display = 'flex';
+          
+          // Update submit button text to reflect update target
+          btnText.innerText = `Update Template: ${template.name}`;
+
+          templateNameInput.focus();
+
+          if (window.innerWidth <= 900) {
+            form.scrollIntoView({ behavior: 'smooth' });
+          }
+        };
+
+        item.addEventListener('click', (e) => {
+          const downloadBtn = e.target.closest('.action-btn-download');
+          const linkBtn = e.target.closest('.action-btn-link');
+
+          if (downloadBtn) {
+            e.stopPropagation();
+            window.location.href = `/templates/${template.id}/download`;
+          } else if (linkBtn) {
+            // Let normal click on the anchor tag handle opening in a new tab
+          } else {
+            selectAction();
+          }
+        });
+
+        templatesScrollArea.appendChild(item);
+      });
+    }
+
+    // Set up template list event listeners if elements exist
+    if (refreshListBtn) {
+      refreshListBtn.addEventListener('click', fetchTemplates);
+
+      searchInput.addEventListener('input', (e) => {
+        const query = e.target.value.toLowerCase().trim();
+        const filtered = allTemplates.filter(t => 
+          t.name.toLowerCase().includes(query) || 
+          t.id.toLowerCase().includes(query)
+        );
+        renderTemplates(filtered);
+      });
+
+      clearSelectionBtn.addEventListener('click', () => {
+        templateIdInput.value = '';
+        document.querySelectorAll('.template-item').forEach(el => el.classList.remove('selected'));
+        selectionNotice.style.display = 'none';
+        btnText.innerText = 'Push to Klaviyo';
+      });
+
+      templateIdInput.addEventListener('input', (e) => {
+        const val = e.target.value.trim();
+        let found = false;
+        document.querySelectorAll('.template-item').forEach(el => {
+          if (el.dataset.id === val) {
+            el.classList.add('selected');
+            const tName = el.querySelector('.template-item-name').innerText;
+            selectionNoticeText.innerHTML = `<strong>Selected:</strong> ${tName} (ID: ${val})`;
+            selectionNotice.style.display = 'flex';
+            btnText.innerText = `Update Template: ${tName}`;
+            found = true;
+          } else {
+            el.classList.remove('selected');
+          }
+        });
+        if (!found) {
+          selectionNotice.style.display = 'none';
+          btnText.innerText = 'Push to Klaviyo';
+        }
+      });
+
+      // Initial fetch
+      fetchTemplates();
+    }
+
+    // Trigger file selection window on clicking dropzone
+    dropzone.addEventListener('click', () => fileInput.click());
+
+    // File Drag and Drop event handling
+    ['dragenter', 'dragover'].forEach(eventName => {
+      dropzone.addEventListener(eventName, (e) => {
+        e.preventDefault();
+        dropzone.classList.add('dragover');
+      }, false);
+    });
+
+    ['dragleave', 'drop'].forEach(eventName => {
+      dropzone.addEventListener(eventName, (e) => {
+        e.preventDefault();
+        dropzone.classList.remove('dragover');
+      }, false);
+    });
+
+    dropzone.addEventListener('drop', (e) => {
+      const dt = e.dataTransfer;
+      const files = dt.files;
+      if (files.length) {
+        fileInput.files = files;
+        handleFileSelection(files[0]);
+      }
+    });
+
+    fileInput.addEventListener('change', (e) => {
+      if (e.target.files.length) {
+        handleFileSelection(e.target.files[0]);
+      }
+    });
+
+    function handleFileSelection(file) {
+      // Validate file extension
+      const fileName = file.name;
+      const isHtml = fileName.endsWith('.html') || fileName.endsWith('.htm');
+      
+      if (!isHtml) {
+        alert("Please select a valid HTML file (.html or .htm)");
+        fileInput.value = '';
+        resetDropzone();
+        return;
+      }
+
+      // Display file details
+      const fileSizeKB = (file.size / 1024).toFixed(1);
+      fileBadge.innerText = `📄 ${fileName} (${fileSizeKB} KB)`;
+      fileBadge.style.display = 'block';
+      dropzonePrompt.style.display = 'none';
+      dropzoneSub.style.display = 'none';
+    }
+
+    function resetDropzone() {
+      fileBadge.style.display = 'none';
+      dropzonePrompt.style.display = 'block';
+      dropzoneSub.style.display = 'block';
+    }
+
+    // Handle AJAX form submission
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      // Perform validation
+      if (!fileInput.files.length) {
+        alert("Please select an HTML file to upload.");
+        return;
+      }
+
+      // Enter loading state
+      submitBtn.disabled = true;
+      spinner.style.display = 'block';
+      btnText.innerText = 'Uploading template...';
+      
+      // Clear previous results
+      resultPanel.style.display = 'none';
+      resultPanel.className = 'result-panel';
+      resultMeta.innerHTML = '';
+
+      const formData = new FormData(form);
+
+      try {
+        const response = await fetch('/push', {
+          method: 'POST',
+          body: formData
+        });
+
+        const data = await response.json();
+
+        // Process response
+        resultPanel.style.display = 'block';
+        if (response.ok && data.success) {
+          resultPanel.classList.add('success');
+          resultHeader.innerHTML = '✨ Upload Succeeded';
+          resultMessage.innerHTML = `${data.message}`;
+          
+          let metaHtml = `
+            <div class="result-details">
+<strong>Template Name:</strong> ${data.template_name}
+<strong>Template ID:</strong> ${data.template_id}
+<strong>Status Code:</strong> ${data.status_code}
+            </div>
+            <a href="${data.klaviyo_url}" class="klaviyo-link" target="_blank">Open Klaviyo Email Templates &rarr;</a>
+          `;
+          resultMeta.innerHTML = metaHtml;
+
+          // Re-fetch templates to update names/dates in the list
+          if (typeof fetchTemplates === 'function') {
+            fetchTemplates();
+          }
+        } else {
+          resultPanel.classList.add('error');
+          resultHeader.innerHTML = '❌ Upload Failed';
+          resultMessage.innerHTML = `${data.message || 'An unexpected error occurred.'}`;
+          
+          if (data.errors && data.errors.length) {
+            let errorDetails = data.errors.map(err => `• ${err}`).join('\n');
+            resultMeta.innerHTML = `<div class="result-details"><strong>Error Details:</strong>\n${errorDetails}</div>`;
+          } else if (data.status_code) {
+            resultMeta.innerHTML = `<div class="result-details"><strong>Status Code:</strong> ${data.status_code}</div>`;
+          }
+        }
+      } catch (err) {
+        resultPanel.style.display = 'block';
+        resultPanel.classList.add('error');
+        resultHeader.innerHTML = '💥 Connection Error';
+        resultMessage.innerHTML = 'Could not communicate with the local server. Make sure the server app is running.';
+      } finally {
+        // Exit loading state
+        submitBtn.disabled = false;
+        spinner.style.display = 'none';
+        btnText.innerText = 'Push to Klaviyo';
+      }
+    });
+  </script>
+</body>
+</html>
