@@ -20,10 +20,10 @@ def load_environment():
     if home_env.exists():
         load_dotenv(dotenv_path=home_env)
 
-def get_templates(api_key, revision=DEFAULT_REVISION, sort="-updated", limit=10):
+def get_templates(api_key, revision=DEFAULT_REVISION, sort="-updated", limit=10, max_count=50):
     """
     Fetch existing email templates from Klaviyo.
-    Supports sequential pagination to fetch up to 3 pages (max 30 templates).
+    Supports sequential pagination following next links up to max_count templates.
     """
     headers = {
         "Authorization": f"Klaviyo-API-Key {api_key}",
@@ -34,25 +34,23 @@ def get_templates(api_key, revision=DEFAULT_REVISION, sort="-updated", limit=10)
     all_data = []
 
     try:
-        response = requests.get(url, headers=headers)
-        if response.status_code != 200:
-            return response
-
-        response_data = response.json()
-        all_data.extend(response_data.get("data", []))
-
-        current_data = response_data
-        for _ in range(2):
-            next_url = current_data.get("links", {}).get("next")
-            if not next_url:
+        current_url = url
+        while current_url and len(all_data) < max_count:
+            response = requests.get(current_url, headers=headers)
+            if response.status_code != 200:
+                if not all_data:
+                    return response
                 break
-            
-            next_response = requests.get(next_url, headers=headers)
-            if next_response.status_code == 200:
-                current_data = next_response.json()
-                all_data.extend(current_data.get("data", []))
-            else:
+
+            response_data = response.json()
+            items = response_data.get("data", [])
+            all_data.extend(items)
+
+            if len(all_data) >= max_count:
+                all_data = all_data[:max_count]
                 break
+
+            current_url = response_data.get("links", {}).get("next")
 
         class UnifiedResponse:
             def __init__(self, status_code, data_dict):
